@@ -3,10 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-<<<<<<< HEAD
   "homepage": "https://Adamlmh.github.io/Graphite",
-=======
->>>>>>> 2247abf (feat: 项目初始化)
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
