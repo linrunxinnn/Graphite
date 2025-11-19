@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Log
+*.log
+
+# Output
+lib/
+types/
+
+
+*.spec.ts
+*.d.ts
+
+# vite配置
+vite.config.ts
+
+vite-plugins/**
+vitest.config.ts
+
+*.test.ts
