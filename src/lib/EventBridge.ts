@@ -28,19 +28,35 @@ export interface CanvasEvent {
   };
   /** 原始 Pixi 事件 */
   nativeEvent: PIXI.FederatedPointerEvent | PIXI.FederatedWheelEvent;
+  preventDefault: () => void;
+  stopPropagation: () => void;
 }
 
 class EventBridge {
   private app: PIXI.Application | null = null;
   private isInitialized = false;
+  // 保存事件处理函数引用，用于正确清理
+  private eventHandlers: {
+    pointerdown?: (event: PIXI.FederatedPointerEvent) => void;
+    pointermove?: (event: PIXI.FederatedPointerEvent) => void;
+    pointerup?: (event: PIXI.FederatedPointerEvent) => void;
+    pointerupoutside?: (event: PIXI.FederatedPointerEvent) => void;
+    wheel?: (event: PIXI.FederatedWheelEvent) => void;
+  } = {};
 
   /**
    * 初始化事件桥接
    * 自动获取 pixiApp 并订阅事件
    */
   init(app?: PIXI.Application): void {
-    if (this.isInitialized) {
+    // 如果已经初始化且 app 相同，跳过
+    if (this.isInitialized && this.app === (app || getPixiApp())) {
       return;
+    }
+
+    // 如果已经初始化但 app 不同，先销毁旧的
+    if (this.isInitialized) {
+      this.destroy();
     }
 
     // 使用传入的 app 或尝试获取 pixiApp
@@ -61,30 +77,29 @@ class EventBridge {
 
     const stage = this.app.stage;
 
-    // 监听 pointerdown 事件
-    stage.on('pointerdown', (event: PIXI.FederatedPointerEvent) => {
+    // 创建并保存事件处理函数引用
+    this.eventHandlers.pointerdown = (event: PIXI.FederatedPointerEvent) => {
       this.handlePointerEvent('pointerdown', event);
-    });
-
-    // 监听 pointermove 事件
-    stage.on('pointermove', (event: PIXI.FederatedPointerEvent) => {
+    };
+    this.eventHandlers.pointermove = (event: PIXI.FederatedPointerEvent) => {
       this.handlePointerEvent('pointermove', event);
-    });
-
-    // 监听 pointerup 事件
-    stage.on('pointerup', (event: PIXI.FederatedPointerEvent) => {
+    };
+    this.eventHandlers.pointerup = (event: PIXI.FederatedPointerEvent) => {
       this.handlePointerEvent('pointerup', event);
-    });
-
-    // 监听 pointerupoutside 事件
-    stage.on('pointerupoutside', (event: PIXI.FederatedPointerEvent) => {
+    };
+    this.eventHandlers.pointerupoutside = (event: PIXI.FederatedPointerEvent) => {
       this.handlePointerEvent('pointerupoutside', event);
-    });
-
-    // 监听 wheel 事件
-    stage.on('wheel', (event: PIXI.FederatedWheelEvent) => {
+    };
+    this.eventHandlers.wheel = (event: PIXI.FederatedWheelEvent) => {
       this.handleWheelEvent(event);
-    });
+    };
+
+    // 注册事件监听器
+    stage.on('pointerdown', this.eventHandlers.pointerdown);
+    stage.on('pointermove', this.eventHandlers.pointermove);
+    stage.on('pointerup', this.eventHandlers.pointerup);
+    stage.on('pointerupoutside', this.eventHandlers.pointerupoutside);
+    stage.on('wheel', this.eventHandlers.wheel);
   }
 
   /**
@@ -111,6 +126,12 @@ class EventBridge {
         meta: event.metaKey,
       },
       nativeEvent: event,
+      preventDefault: () => {
+        event.preventDefault();
+      },
+      stopPropagation: () => {
+        event.stopPropagation();
+      },
     };
 
     // 通过 eventBus 分发事件
@@ -141,6 +162,12 @@ class EventBridge {
         meta: event.metaKey,
       },
       nativeEvent: event,
+      preventDefault: () => {
+        event.preventDefault();
+      },
+      stopPropagation: () => {
+        event.stopPropagation();
+      },
     };
 
     // 通过 eventBus 分发事件
@@ -153,12 +180,25 @@ class EventBridge {
   destroy(): void {
     if (this.app) {
       const stage = this.app.stage;
-      stage.off('pointerdown');
-      stage.off('pointermove');
-      stage.off('pointerup');
-      stage.off('pointerupoutside');
-      stage.off('wheel');
+      // 使用保存的处理函数引用精确移除监听器
+      if (this.eventHandlers.pointerdown) {
+        stage.off('pointerdown', this.eventHandlers.pointerdown);
+      }
+      if (this.eventHandlers.pointermove) {
+        stage.off('pointermove', this.eventHandlers.pointermove);
+      }
+      if (this.eventHandlers.pointerup) {
+        stage.off('pointerup', this.eventHandlers.pointerup);
+      }
+      if (this.eventHandlers.pointerupoutside) {
+        stage.off('pointerupoutside', this.eventHandlers.pointerupoutside);
+      }
+      if (this.eventHandlers.wheel) {
+        stage.off('wheel', this.eventHandlers.wheel);
+      }
     }
+    // 清空事件处理函数引用
+    this.eventHandlers = {};
     this.app = null;
     this.isInitialized = false;
   }
