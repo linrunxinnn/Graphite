@@ -80,17 +80,16 @@ function App() {
     };
   }, []);
 
-<<<<<<< HEAD
   /**
    * 监听 DOM 事件（键盘事件）
    */
   useEffect(() => {
-    console.log('🔍 开始监听 DOM 事件（键盘）...');
+    console.log('开始监听 DOM 事件（键盘）...');
 
     // 监听 keyboard:down 事件
     const handleKeyDown = (...args: unknown[]) => {
       const event = args[0] as KeyboardEventPayload;
-      console.log('✅ keyboard:down 事件接收成功:', {
+      console.log('keyboard:down 事件接收成功:', {
         type: event.type,
         key: event.key,
         code: event.code,
@@ -104,7 +103,7 @@ function App() {
     // 监听 keyboard:up 事件
     const handleKeyUp = (...args: unknown[]) => {
       const event = args[0] as KeyboardEventPayload;
-      console.log('✅ keyboard:up 事件接收成功:', {
+      console.log('keyboard:up 事件接收成功:', {
         type: event.type,
         key: event.key,
         code: event.code,
@@ -115,18 +114,16 @@ function App() {
     eventBus.on('keyboard:down', handleKeyDown);
     eventBus.on('keyboard:up', handleKeyUp);
 
-    console.log('✅ DOM 事件监听器已注册');
+    console.log('DOM 事件监听器已注册');
 
     // 清理函数：组件卸载时取消订阅
     return () => {
       eventBus.off('keyboard:down', handleKeyDown);
       eventBus.off('keyboard:up', handleKeyUp);
-      console.log('🧹 DOM 事件监听器已清理');
+      console.log('DOM 事件监听器已清理');
     };
   }, []);
 
-=======
->>>>>>> 1034cb7 (feat: 新增了DOMEventBridge，同时修复EventBridge的生命周期漏洞)
   return (
     <div className="app-container">
       <CanvasRenderer />
